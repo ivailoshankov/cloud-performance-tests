@@ -1,0 +1,47 @@
+- name: dependency provisioning
+  hosts: testmachines
+  become: yes
+  become_method: sudo
+  gather_facts: false
+  tasks:
+    - name: Install python2
+      raw: sudo apt-get -y install python
+
+    - name: Install fio
+      apt: pkg=fio state=installed update_cache=true
+
+    - name: Install sysbench
+      apt: pkg=sysbench state=installed update_cache=true
+
+    - name: Install MYSQL server
+      apt: name={{ item }} update_cache=yes cache_valid_time=3600 state=present
+      sudo: yes
+      with_items:
+        - python-mysqldb
+        - mysql-server
+
+    - name: Start the MySQL service
+      sudo: yes
+      service: 
+        name: mysql 
+        state: started
+        enabled: true
+
+    - name: update mysql root password for all root accounts
+      sudo: yes
+      mysql_user: 
+        name: root 
+        host: "127.0.0.1" 
+        password: "sysbenchtest"
+        login_user: root
+        login_password: "sysbenchtest"
+        check_implicit_admin: yes
+        priv: "*.*:ALL,GRANT"
+
+    - name: Create database for OLTP testing
+      mysql_db:
+        name: sysbenchtest
+        state: present
+
+    - name: Prepare the test database
+      shell: sysbench --test=oltp --oltp-table-size=1000000 --db-driver=mysql --mysql-db=sysbenchtest --mysql-user=root --mysql-password=sysbenchtest prepare

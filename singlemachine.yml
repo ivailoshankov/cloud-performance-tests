@@ -1,0 +1,42 @@
+- name: Single Machine tests 
+  hosts: testmachine1
+  become: yes
+  become_method: sudo
+  gather_facts: false
+  tasks:
+    - name: fio random write test 
+      shell: fio --time_based --name=benchmark --size=10G --runtime=30 --filename=fio-random-write --ioengine=libaio --randrepeat=0 --iodepth=128 --direct=1 --invalidate=1 --verify=0 --verify_fatal=0 --numjobs=4 --rw=randwrite --blocksize=16k --group_reporting
+      register: fio_random_write_output
+
+    - name: make sure files are deleted
+      shell: rm -f fio-random-write
+
+    - name: fio random read test
+      shell: fio --time_based --name=benchmark --size=10G --runtime=30 --filename=fio-random-read --ioengine=libaio --randrepeat=0 --iodepth=128 --direct=1 --invalidate=1 --verify=0 --verify_fatal=0 --numjobs=4 --rw=randread --blocksize=16k --group_reporting
+      register: fio_random_read_output
+
+    - name: make sure files are deleted
+      shell: rm -f fio-random-read
+
+    - name: sysbench cpu test
+      shell: sysbench --test=cpu --cpu-max-prime=20000 --num-threads=2 run
+      register: sysbench_cpu_test_output
+
+    - name: sysbench memory read
+      shell: sysbench --test=memory --memory-block-size=1K --memory-scope=global --memory-total-size=100G --memory-oper=read run
+      register: sysbench_memory_read_output
+
+    - name: sysbench memory write
+      shell: sysbench --test=memory --memory-block-size=1K --memory-scope=global --memory-total-size=100G --memory-oper=write run
+      register: sysbench_memory_write_output
+
+    - name: sysbench MYSQL OLTP test
+      shell: sysbench --test=oltp --oltp-table-size=1000000 --db-driver=mysql --mysql-db=sysbenchtest --mysql-user=root --mysql-password=sysbenchtest --max-time=60 --oltp-read-only=off --max-requests=0 --num-threads=8 run
+      register: sysbench_mysql_oltp_output
+
+
+    - copy:
+        content: "{% for host in groups.testmachine1 %}------- fio random write {{host}}  -------\n{{ hostvars[host].fio_random_write_output.stdout }}\n==============\n------- fio random read {{host}}  -------\n{{ hostvars[host].fio_random_read_output.stdout }}\n==============\n------- sysbench cpu {{host}}  -------\n{{ hostvars[host].sysbench_cpu_test_output.stdout }}\n==============\n------- sysbench memory read {{host}}  -------\n{{ hostvars[host].sysbench_memory_read_output.stdout }}\n==============\n------- sysbench memory write {{host}}  -------\n{{ hostvars[host].sysbench_memory_write_output.stdout }}\n==============\n------- sysbench MYSQL oltp {{host}}  -------\n{{ hostvars[host].sysbench_mysql_oltp_output.stdout }}\n==============\n{% endfor %}"
+        dest: ./singlemachine.out
+      delegate_to: localhost
+      run_once: true
