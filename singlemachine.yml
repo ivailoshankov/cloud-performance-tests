@@ -5,14 +5,14 @@
   gather_facts: false
   tasks:
     - name: fio random write test 
-      shell: fio --time_based --name=benchmark --size=10G --runtime=30 --filename=fio-random-write --ioengine=libaio --randrepeat=0 --iodepth=128 --direct=1 --invalidate=1 --verify=0 --verify_fatal=0 --numjobs=4 --rw=randwrite --blocksize=16k --group_reporting
+      shell: fio --time_based --name=benchmark --size=10G --runtime=300 --filename=fio-random-write --ioengine=libaio --randrepeat=0 --iodepth=128 --direct=1 --invalidate=1 --verify=0 --verify_fatal=0 --numjobs=4 --rw=randwrite --blocksize=16k --group_reporting
       register: fio_random_write_output
 
     - name: make sure files are deleted
       shell: rm -f fio-random-write
 
     - name: fio random read test
-      shell: fio --time_based --name=benchmark --size=10G --runtime=30 --filename=fio-random-read --ioengine=libaio --randrepeat=0 --iodepth=128 --direct=1 --invalidate=1 --verify=0 --verify_fatal=0 --numjobs=4 --rw=randread --blocksize=16k --group_reporting
+      shell: fio --time_based --name=benchmark --size=10G --runtime=300 --filename=fio-random-read --ioengine=libaio --randrepeat=0 --iodepth=128 --direct=1 --invalidate=1 --verify=0 --verify_fatal=0 --numjobs=4 --rw=randread --blocksize=16k --group_reporting
       register: fio_random_read_output
 
     - name: make sure files are deleted
