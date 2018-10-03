@@ -1,0 +1,21 @@
+- name: All machines fio read test 
+  hosts: testmachines
+  become: yes
+  become_method: sudo
+  gather_facts: false
+  tasks:
+    - name: fio random read test
+      shell: fio --time_based --name=benchmark --size=10G --runtime=300 --filename=fio-random-read --ioengine=libaio --randrepeat=0 --iodepth=128 --direct=1 --invalidate=1 --verify=0 --verify_fatal=0 --numjobs=4 --rw=randread --blocksize=16k --group_reporting
+      async: 360
+      poll: 10
+      register: fio_random_read_output
+
+    - name: make sure files are deleted
+      shell: rm -f fio-random-read
+
+
+    - copy:
+        content: "{% for host in groups.testmachines %}------- fio random read {{host}}  -------\n{{ hostvars[host].fio_random_read_output.stdout }}\n=============={% endfor %}"
+        dest: ./allfioread.out
+      delegate_to: localhost
+      run_once: true

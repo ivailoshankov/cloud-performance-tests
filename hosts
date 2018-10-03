@@ -1,0 +1,11 @@
+[testmachine1]
+testm-1
+
+[testmachine5]
+testm-1
+testm-2
+
+[testmachines]
+testm-1
+testm-2
+testm-3

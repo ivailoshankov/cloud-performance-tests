@@ -1,0 +1,18 @@
+- name: All machines MYSQL OLTP test 
+  hosts: testmachines
+  become: yes
+  become_method: sudo
+  gather_facts: false
+  tasks:
+    - name: sysbench MYSQL OLTP test
+      shell: sysbench --test=oltp --oltp-table-size=1000000 --db-driver=mysql --mysql-db=sysbenchtest --mysql-user=root --mysql-password=sysbenchtest --max-time=60 --oltp-read-only=off --max-requests=0 --num-threads=8 run
+      async: 600
+      poll: 10
+      register: sysbench_mysql_oltp_output
+
+
+    - copy:
+        content: "{% for host in groups.testmachines %}------- sysbench MYSQL oltp {{host}}  -------\n{{ hostvars[host].sysbench_mysql_oltp_output.stdout }}\n=============={% endfor %}"
+        dest: ./allmysqloltp.out
+      delegate_to: localhost
+      run_once: true
